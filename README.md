@@ -53,5 +53,5 @@ python3 contact-control.py
 
 ### Canceling contacts
 
-![Canceling contacts](./usage-examples/Cancel.png "Canceling contacts")
+![Canceling contacts](./usage-examples/cancel.png "Canceling contacts")
 
