@@ -639,9 +639,20 @@ def schedule_contact(gs_client):
                 )
 
                 contact_Id = reservation["contactId"]
-                print(f"Scheduled contact ID: {contact_Id}")
+                
+                contact_status = gs_client.describe_contact(contactId=contact_Id)["contactStatus"]
+                backoff = 2
+                while(contact_status == "SCHEDULING"):
+                    time.sleep(backoff)
+                    contact_status = gs_client.describe_contact(contactId=contact_Id)["contactStatus"]
+                    print(f"{contact_status} contact with ID {contact_Id}")
+                    backoff = backoff * 2
 
-                contact_count = contact_count + 1
+                if(contact_status == "SCHEDULED"):
+                    contact_count = contact_count + 1
+
+                if(contact_status == "FAILED_TO_SCHEDULE"):
+                   print(f"Try an alternative antenna location and time combination.")
 
             main()
         else:
@@ -877,12 +888,6 @@ def cancel_contact(gs_client):
                         print(contact_details)
 
                         cancellation = gs_client.cancel_contact(contactId=contact_Id)
-
-                        print(
-                            "Successfully canceled contact with ID: "
-                            + cancellation["contactId"]
-                        )
-                        print()
 
             main()
         else:
