@@ -16,7 +16,7 @@ The utility can:
 
 Contacts with duration shorter than the whole craft pass are scheduled in the middle of the pass to maximize craft elevation.
 
-The tool uses default AWS CLI credentials/region stored in the /.aws folder
+The tool uses default AWS CLI credentials stored in the /.aws folder
 Learn how to set up your AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html 
 
 NB: Canceling on demand contacts incurs their full cost! 
@@ -40,6 +40,19 @@ Run the utility and follow the on screen instructions.
 ```bash
 python3 contact-control.py     
 ```
+
+### Known dependancy issue
+
+```bash
+File "/opt/homebrew/lib/python3.11/site-packages/prompt_toolkit/styles/from_dict.py", line 9, in <module>
+    from collections import Mapping
+ImportError: cannot import name 'Mapping' from 'collections'
+```
+
+If you get the above error from the collections library you have to do the following:
+1. `nano /opt/homebrew/lib/python3.11/site-packages/prompt_toolkit/styles/from_dict.py` 
+2. Change collections import statement from `from collections import Mapping` to `from collections.abc import Mapping`
+3. Save and quit
 
 ### Scheduling contacts 
 

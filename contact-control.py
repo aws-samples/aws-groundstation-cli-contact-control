@@ -8,7 +8,7 @@
 # 2. Show contacts
 # 3. Cancel scheduled contacts
 
-# It uses your default credentials/region stored in the /.aws folder
+# It uses your default credentials stored in the /.aws folder
 
 # NB: Canceling on demand contacts incurs their full cost!
 
@@ -18,6 +18,7 @@
 import boto3
 import datetime
 import time
+from botocore.config import Config
 from PyInquirer import prompt, Separator
 import regex
 from prompt_toolkit.validation import Validator, ValidationError
@@ -499,11 +500,20 @@ def schedule_contact(gs_client):
         gs_client, ["AVAILABLE"]
     )
 
+    if not pass_list:
+        print()
+        print("No available passes with specified parameters.")
+        print("Check your mission profile configuration.")
+        print("Returning to main menu.")
+        print()
+        main()
+
     minimum_elevation_question = [
         {
             "type": "input",
             "name": "minimum_elevation",
             "message": "Enter the minimum elevation requirement in degrees",
+            "default": "30",
             "validate": ElevationValidator,
         }
     ]
@@ -553,8 +563,6 @@ def schedule_contact(gs_client):
                 suitable_passes.append(_pass)
 
     if suitable_passes:
-
-        padding = 45
 
         if whole_duration_answer:
             print(
@@ -897,8 +905,6 @@ def cancel_contact(gs_client):
 
 def main():
 
-    gs_client = boto3.client("groundstation")
-
     task_question = [
         {
             "type": "list",
@@ -916,14 +922,65 @@ def main():
     task_answer = prompt(task_question)
     task = task_answer["task"]
 
+    if task == "Quit":
+        quit()
+
+    region_question = [
+        {
+            "type": "list",
+            "name": "region",
+            "message": "Which region would you like to use?",
+            "choices": [
+                "N. Virginia (us-east-1)",
+                "Ohio (us-east-2)",
+                "Oregon (us-west-2)",
+                "Cape Town (af-south-1)",
+                "Seoul (ap-northeast-2)",
+                "Sydney (ap-southeast-2)",
+                "Frankfurt (eu-central-1)",
+                "Ireland (eu-west-1)",
+                "Stockholm (eu-north-1)",
+                "Bahrain (me-south-1)",
+                "Sao Paulo (sa-east-1)",
+                "Singapore (ap-southeast-1)"
+            ],
+        }
+    ]
+
+    answer = prompt(region_question)
+    full_region = answer["region"]
+
+    region = full_region[full_region.find("(") + 1 : full_region.find(")")]
+
+    my_config = Config(
+        region_name=region,
+        signature_version="v4",
+        retries={"max_attempts": 4, "mode": "standard"},
+    )
+
+    gs_client = boto3.client("groundstation", config=my_config)
+
+    try:
+        mission_profile_list = gs_client.list_mission_profiles()
+    except Exception as e:
+        print(
+            "Your AWS account doesn't have access to this region. Exiting to main menu."
+        )
+        print(e)
+        main()  
+
+    if not mission_profile_list["missionProfileList"]:
+        print("No mission profiles in " + full_region + ". Exiting to main menu.")
+        main()  
+
+
     if task == "Schedule contacts":
         schedule_contact(gs_client)
     elif task == "View contacts":
         view_contact(gs_client)
     elif task == "Cancel contacts":
         cancel_contact(gs_client)
-    elif task == "Quit":
-        quit()
+ 
 
     main()
 
